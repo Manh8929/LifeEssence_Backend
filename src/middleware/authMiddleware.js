@@ -47,7 +47,8 @@ const authMiddleware = (req, res, next)=>{
 
 const authUserMiddleware = (req, res, next) => {
     const authHeader = req.headers.token;
-    
+
+    // Kiểm tra token
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({
             message: "No token provided",
@@ -56,7 +57,6 @@ const authUserMiddleware = (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const userId = req.params.id;
 
     jwt.verify(token, process.env.ACCESS_TOKEN, (err, user) => {
         if (err) {
@@ -66,16 +66,15 @@ const authUserMiddleware = (req, res, next) => {
             });
         }
 
-        if (user?.isAdmin || user?.id === userId) {
-            next();
+        // Kiểm tra quyền truy cập
+        if (user?.isAdmin || user?.id === req.params.id) {
+            return next();
         } else {
             return res.status(403).json({
                 message: "You do not have permission",
                 status: "ERROR"
             });
         }
-
-        console.log("user", user);
     });
 };
 module.exports = {
