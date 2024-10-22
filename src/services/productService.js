@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt")
 
 const createProduct = (newProduct) => {
     return new Promise(async (resolve, reject) => {
-        const{ name, image, type, price, countInStock,rating,description} = newProduct
+        const { name, image, type, price, countInStock, rating, description, discount } = newProduct
 
 
         try {
@@ -18,7 +18,14 @@ const createProduct = (newProduct) => {
             }
 
             const createdProduct = await Product.create({
-                name, image, type, price, countInStock,rating,description
+                name,
+                image, 
+                type, 
+                price,
+                countInStock: Number(countInStock), 
+                rating,
+                description,
+                discount: Number(discount)
             })
             if (createdProduct) {
                 resolve({
@@ -106,7 +113,7 @@ const deleteManyProduct = (ids) => {
     return new Promise(async (resolve, reject) => {
 
         try {
-            await Product.deleteMany({_id: ids})
+            await Product.deleteMany({ _id: ids })
             resolve({
                 status: "OK",
                 message: "Delete product success"
@@ -117,44 +124,65 @@ const deleteManyProduct = (ids) => {
         }
     })
 }
-const getAllProduct = (limit, page ,sort,filter ) => {
+const getAllProduct = (limit, page, sort, filter) => {
     return new Promise(async (resolve, reject) => {
         try {
             const totalProduct = await Product.countDocuments()
-            if(filter){
+            let allProduct = []
+            if (filter) {
                 const label = filter[0];
-                const allObjectFilter = await Product.find({[label]: {'$regex': filter[1]}}).limit(limit).skip(page * limit)
+                const allObjectFilter = await Product.find({ [label]: { '$regex': filter[1] } }).limit(limit).skip(page * limit)
                 resolve({
-                status: "OK",
-                message: "Success",
-                data: allObjectFilter,
-                total: totalProduct,
-                pageCurrent: Number(page + 1),
-                totalPages: Math.ceil(totalProduct / limit) 
-            })
+                    status: "OK",
+                    message: "Success",
+                    data: allObjectFilter,
+                    total: totalProduct,
+                    pageCurrent: Number(page + 1),
+                    totalPages: Math.ceil(totalProduct / limit)
+                })
             }
-            if(sort){
+            if (sort) {
                 const objectSort = {}
                 objectSort[sort[1]] = sort[0]
                 console.log("objectSort", objectSort)
                 const allProductSort = await Product.find().limit(limit).skip(page * limit).sort(objectSort)
                 resolve({
-                status: "OK",
-                message: "Success",
-                data: allProductSort,
-                total: totalProduct,
-                pageCurrent: Number(page + 1),
-                totalPages: Math.ceil(totalProduct / limit) 
-            })
+                    status: "OK",
+                    message: "Success",
+                    data: allProductSort,
+                    total: totalProduct,
+                    pageCurrent: Number(page + 1),
+                    totalPages: Math.ceil(totalProduct / limit)
+                })
             }
-            const allProduct = await Product.find().limit(limit).skip(page * limit)
+            if (!limit) {
+                allProduct = await Product.find()
+
+            } else {
+                allProduct = await Product.find().limit(limit).skip(page * limit)
+            }
             resolve({
                 status: "OK",
                 message: "Success",
                 data: allProduct,
                 total: totalProduct,
                 pageCurrent: Number(page + 1),
-                totalPages: Math.ceil(totalProduct / limit) 
+                totalPages: Math.ceil(totalProduct / limit)
+            })
+
+        } catch (e) {
+            reject(e)
+        }
+    })
+}
+const getAllType = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const allType = await Product.distinct('type')
+            resolve({
+                status: "OK",
+                message: "Success",
+                data: allType,
             })
 
         } catch (e) {
@@ -170,5 +198,6 @@ module.exports = {
     getDetailsProduct,
     deleteProduct,
     getAllProduct,
-    deleteManyProduct
+    deleteManyProduct,
+    getAllType
 }
